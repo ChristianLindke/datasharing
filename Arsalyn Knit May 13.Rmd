@@ -1,0 +1,212 @@
+---
+title: "Key Operators in R from Kosuke Imai's Chapter on Causality"
+author: "Christian Lindke"
+date: "5/13/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r turnout}
+turnout <- read.csv("https://raw.githubusercontent.com/kosukeimai/qss/master/INTRO/turnout.csv")
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r voting, echo=FALSE}
+turnout <- read.csv("https://raw.githubusercontent.com/kosukeimai/qss/master/INTRO/turnout.csv")
+plot(turnout$ANES)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot. 
+
+If you want to embed an R code chunk, there are two methods. The first is to type three accents (same key as the tilde) and the second is to hit CTRL + ALT + i in Windows (Command + Option + i in Mac OS).
+
+```{r ANES}
+plot(x = turnout$year, y = turnout$ANES)
+```
+
+
+Here are five important functions to use when initially examining your data.
+
+Head(data_title): LIsts the column headings and the first six rows of your data frame.
+
+summary(data_title)" Provides basic summary data for your data frame including mean, median, etc.
+
+ncol(data_title): Produces the number of columns in your data frame.
+
+nrow(data_title): Produces the number of rows (typically your observations) in your data frame.
+
+colnames(data_title): Provides the names of all columns (typically your variables of interest) in the data frame.
+
+class(data_frame$column): Gives you the class of a particular variable.
+
+
+```{r looking}
+head(turnout)
+summary(turnout)
+ncol(turnout)
+nrow(turnout)
+colnames(turnout)
+class(turnout$ANES)
+```
+
+In addition to being able to quickly look at an overview of your data, you may sometimes find it useful to produce a contingency table (also known as cross tabulation) in order to examine how different sub-groups compare for a given variable of interest.
+
+In the case of Kosuke Imai's chapter on Causality, we are interested in exploring an audit experiment which examined whether race played a role in determining whether an individual received a call back for an interview. In the code chunk below we load and summarize the data and generate a small contingency table based on the race of the submitted resumes.
+
+table(row, column): This creates a contingency table of the rows and columns signified within the parentheses. It is important to note that the rows and columns are identified using the $ character where the first descriptor is the data frame and the second is the column.
+
+```{r racextab}
+resume <- read.csv("https://raw.githubusercontent.com/kosukeimai/qss-swirl/master/CAUSALITY1/resume.csv")
+head(resume)
+summary(resume)
+ncol(resume)
+nrow(resume)
+colnames(resume)
+
+race.cross.tab <- table(race = resume$race, call = resume$call)
+race.cross.tab
+
+```
+
+If you take a quick look at the cross tabulation above, you will notice that it lacks the totals for each column and row. These can be added using the addmargins() function.
+
+```{r racextabtotals}
+
+addmargins(race.cross.tab)
+
+```
+
+Adding the margins quickly lets us quickly see that the samples are of equal size, but that there are differences of who received a call back based on race.
+
+Having created this easy to use contingency table, we can do some quick analysis. We can find the overall call back rate and the call back rates for each race.
+
+## Examining the Data
+
+
+To get the overall callback rate, you divide the total callbacks by the total sample size.
+```{r callback}
+sum(race.cross.tab[,2])/nrow(resume) # Overall Callback Rate
+
+```
+
+This command takes the sum of all the information in column 2 of race.cross.tab and divides it by the number of rows (observations)
+
+We now repeat for each race.
+
+First we look at resumes for black applicants.
+
+```{r}
+race.cross.tab[1,2]/sum(race.cross.tab[1, ]) #Callback Rate for Black Applicants
+```
+
+What this command does is it takes the information in Row 1 (black) Column 2 (1 = called back) and divides that by the sum of all the values in row 1.
+
+Next we find the callback rate for white applicants.
+
+```{r}
+race.cross.tab[2,2]/sum(race.cross.tab[2, ]) # Callback Rate for White Applicants
+```
+
+Here we have taken the information from Row 2 (white) and column 2 (1 = called back) and divided it by the sum of all values in row 2 (white).
+
+An easier way to determine callback rates is to use the mean function and the $ signifier.
+
+```{r}
+mean(resume$call)
+```
+
+This gives us the overall call rate, but to find the call rate for the subgroups we need to learn "Subsetting" in R.
+
+## How to Subset Data in R
+
+### Key Operators
+
+class(): Tells you the class of the particular data.
+
+as.integer(): Transforms data from another variable type to integer if possible.
+
+For example, we can look at logical data.
+
+```{r}
+class(TRUE)
+```
+
+This tells us that the value TRUE is a logical value. There are two logical values in R: TRUE and FALSE. You can transform them into integers with the as.integer function, but R can coerce TRUE and FALSE into a binary variable.
+
+Let's create a vector and test that.
+
+```{r}
+x <- c(TRUE, FALSE, TRUE, FALSE, TRUE, FALSE) # A vector with three true and three false values. 
+```
+
+Let's find the mean of (x) remembering that the mean and the proportion of TRUEs is the same. While we are at it, let's get the number of TRUE values as well. 
+
+```{r}
+mean(x) # proportion of TRUEs since TRUE has a value of 1
+
+sum(x) # number of TRUEs
+```
+
+### Logical Expressions in R
+
+R has a number of operators that can be used to test if things are TRUE and/or FALSE. If you type them "raw" into the R console, then R will evaluate your entry as a logical expression.
+
+& = AND
+
+| = OR
+
+! = NOT
+
+Let's test this.
+
+The statement TRUE & TRUE should be TRUE because if a statement contains only truth claim 1 and truth claim two and both are true then the statement is true.  
+
+```{r}
+TRUE & TRUE
+```
+
+However, the statement TRUE & FALSE should give a result of FALSE because a statement that contains truth claim 1 and truth claim 2, but where truth claim 2 is FALSE, is a false statement.
+
+```{r}
+TRUE & FALSE
+```
+
+If we want to rate something as TRUE if some part of it is true, then we use the OR operator.
+
+```{r}
+TRUE | FALSE
+```
+
+In this case, at least one component is TRUE so the expression is true.
+
+If both components are FALSE, the expression is still false.
+
+```{r}
+FALSE | FALSE
+```
+
+We can add muldiple coparisons by chaining them together.
+
+```{r}
+TRUE & FALSE & TRUE
+```
+
+
+
+
+
+
+
+
